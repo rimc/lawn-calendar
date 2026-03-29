@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Lawn Calendar">
+<meta name="theme-color" content="#2d3a1e">
+<title>My Lawn Calendar</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  
+  body {
+    font-family: Georgia, Cambria, serif;
+    background: #fafaf5;
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding: 0 0 env(safe-area-inset-bottom, 0);
+  }
+
+  .container {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 24px 14px 40px;
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+
+  .header h1 {
+    font-family: 'Trebuchet MS', 'Lucida Grande', sans-serif;
+    font-size: 21px;
+    font-weight: 700;
+    color: #2d3a1e;
+    letter-spacing: 0.3px;
+  }
+
+  .header .subtitle {
+    font-size: 13px;
+    color: #6b7a5a;
+    margin-top: 5px;
+    font-style: italic;
+  }
+
+  /* Current season indicator */
+  .now-banner {
+    text-align: center;
+    margin-bottom: 18px;
+    padding: 8px 14px;
+    background: linear-gradient(135deg, #2d3a1e, #4a5f30);
+    color: #d4e8b8;
+    border-radius: 10px;
+    font-family: 'Trebuchet MS', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .now-banner strong { color: #fff; }
+
+  /* Filter bar */
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+    margin-bottom: 18px;
+  }
+
+  .filter-btn {
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1px solid #c8c8b8;
+    background: #fff;
+    color: #4a4a3a;
+    font-size: 12px;
+    font-family: 'Trebuchet MS', sans-serif;
+    font-weight: 400;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    -webkit-appearance: none;
+  }
+
+  .filter-btn.active {
+    border: 2px solid #2d3a1e;
+    background: #2d3a1e;
+    color: #fff;
+    font-weight: 600;
+  }
+
+  /* Season cards */
+  .season {
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid #d4d4c8;
+    background: #fff;
+    margin-bottom: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    transition: box-shadow 0.2s ease;
+  }
+
+  .season.highlight {
+    border: 2px solid var(--season-color);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  }
+
+  .season-header {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 14px;
+    border: none;
+    cursor: pointer;
+    background: #fff;
+    transition: background 0.2s ease;
+    -webkit-appearance: none;
+    text-align: left;
+  }
+
+  .season.open .season-header {
+    background: var(--season-accent);
+  }
+
+  .season-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .season-icon { font-size: 20px; }
+
+  .season-name {
+    font-family: 'Trebuchet MS', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--season-color);
+  }
+
+  .season-dates {
+    font-size: 12px;
+    color: #888;
+    font-family: 'Trebuchet MS', sans-serif;
+    margin-top: 1px;
+  }
+
+  .key-badge {
+    display: inline-block;
+    margin-left: 8px;
+    font-size: 10px;
+    background: var(--season-color);
+    color: #fff;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 600;
+    vertical-align: middle;
+  }
+
+  .season-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .task-count {
+    font-size: 11px;
+    color: #999;
+    font-family: 'Trebuchet MS', sans-serif;
+  }
+
+  .chevron {
+    font-size: 13px;
+    color: #aaa;
+    transition: transform 0.2s ease;
+    display: inline-block;
+  }
+
+  .season.open .chevron { transform: rotate(180deg); }
+
+  /* Task list */
+  .tasks {
+    display: none;
+    padding: 4px 12px 14px;
+  }
+
+  .season.open .tasks { display: block; }
+
+  .no-tasks {
+    font-size: 13px;
+    color: #aaa;
+    font-style: italic;
+    text-align: center;
+    padding: 10px 0;
+  }
+
+  .task {
+    margin-top: 8px;
+    padding: 12px 13px;
+    border-radius: 8px;
+    border-left: 4px solid var(--task-border);
+    background: var(--task-bg);
+  }
+
+  .task-title {
+    font-family: 'Trebuchet MS', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: #2a2a2a;
+    margin-bottom: 4px;
+  }
+
+  .task-details {
+    font-size: 13px;
+    color: #444;
+    line-height: 1.5;
+  }
+
+  .task-dep {
+    margin-top: 8px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.7);
+    font-size: 12px;
+    color: #6b3a1a;
+    font-weight: 500;
+    line-height: 1.4;
+    border-left: 3px solid #d4871a;
+  }
+
+  /* Bottom panels */
+  .panel {
+    margin-top: 20px;
+    padding: 16px;
+    border-radius: 10px;
+  }
+
+  .panel-products {
+    background: #f0ede4;
+    border: 1px solid #d8d4c8;
+  }
+
+  .panel-rules {
+    background: #fce8e8;
+    border: 1px solid #e8c8c8;
+  }
+
+  .panel h3 {
+    font-family: 'Trebuchet MS', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+
+  .panel-products h3 { color: #4a4a3a; }
+  .panel-rules h3 { color: #8b2020; }
+
+  .panel-body {
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  .panel-products .panel-body { color: #555; }
+  .panel-rules .panel-body { color: #5a2020; line-height: 1.8; }
+  .panel-body strong { font-weight: 700; }
+
+  .footer {
+    text-align: center;
+    font-size: 11px;
+    color: #aaa;
+    margin-top: 16px;
+    font-style: italic;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <h1>🏡 My Lawn Calendar</h1>
+    <p class="subtitle">Turf-Type Tall Fescue · Maryland Mid-Atlantic</p>
+  </div>
+
+  <div class="now-banner" id="nowBanner"></div>
+
+  <div class="filters" id="filters"></div>
+
+  <div id="seasons"></div>
+
+  <div class="panel panel-products">
+    <h3>🧰 My Products & Supplies</h3>
+    <div class="panel-body">
+      <div><strong>Seed:</strong> Super Turf II LS (United Seeds) — TTTF blend, no ryegrass</div>
+      <div><strong>Herbicide:</strong> Triad Select (2,4-D / MCPA / Dicamba) — 1.1–1.5 oz/gal</div>
+      <div><strong>Surfactant:</strong> Liquid Harvest Non-Ionic — 1 tsp/gal</div>
+      <div><strong>Liquid Fert:</strong> Simple Lawn Solutions 28-0-0 — light spring/fall boost</div>
+      <div><strong>Organic Fert:</strong> Milorganite</div>
+      <div><strong>Starter Fert:</strong> Anderson's 20-27-5 New Lawn Starter</div>
+      <div><strong>Aerator:</strong> Corona YardBREATHER (Lowe's)</div>
+    </div>
+  </div>
+
+  <div class="panel panel-rules">
+    <h3>🚨 Key Rules & Dependencies</h3>
+    <div class="panel-body">
+      <div>• <strong>Pre-emergent vs. Seed:</strong> You cannot apply crabgrass pre-emergent and reseed in the same season. Pick one.</div>
+      <div>• <strong>Herbicide heat limit:</strong> No broadleaf herbicide when temps exceed 85–90°F.</div>
+      <div>• <strong>Seeding cutoff:</strong> October 15 — absolute last date for fall seeding.</div>
+      <div>• <strong>Mowing rule:</strong> Never cut more than ⅓ of blade length at once.</div>
+      <div>• <strong>Fertilizer on dry grass:</strong> Spread when blades are dry, then water in. Avoid early AM / late PM.</div>
+      <div>• <strong>Soil test every 3–4 years:</strong> Drives fertilizer rates and lime decisions.</div>
+    </div>
+  </div>
+
+  <p class="footer">Based on UMD Extension guidelines for Maryland tall fescue lawns</p>
+
+</div>
+
+<script>
+const SEASONS = [
+  {
+    id: "early-spring", label: "Early Spring", dates: "March 1 – March 15",
+    color: "#5a8f3d", accent: "#e8f0e2", icon: "🌱", months: [2], dayRange: [1, 15],
+    tasks: [
+      { title: "Reseed Bare Spots", details: "Patch bare areas with Super Turf II LS (TTTF blend). Keep seed moist until established.", type: "seed", dep: "⚠️ If you reseed now, do NOT apply crabgrass pre-emergent — it will kill new seedlings." },
+      { title: "Hand-Pull Weeds", details: "Pull dandelions, wild onion/garlic, and broadleaf weeds while soil is soft and moist. Use a narrow weeding tool for onion grass bulbs.", type: "weed" },
+      { title: "Spot-Spray Wild Onion/Garlic", details: "Apply Triad Select (1.1–1.5 oz/gal) + surfactant. Don't mow 1–2 days before/after. Expect 2–3 applications, 2–3 weeks apart.", type: "weed" },
+      { title: "Spring Fertilizer (only if you skipped fall)", details: "If you did NOT fertilize last fall: apply 5 lbs 10-6-4 per 1,000 sq ft (clippings removed) or 1.5 lbs Ammonium Nitrate 33-0-0 per 1,000 sq ft (clippings left on).", type: "fertilizer", dep: "⏭️ Skip this if you fertilized in fall — fall apps carry through." },
+    ],
+  },
+  {
+    id: "mid-spring", label: "Mid Spring", dates: "March 15 – April 15",
+    color: "#4a7f2d", accent: "#dfe9d6", icon: "🛡️", months: [2, 3], dayRange: [15, 15],
+    tasks: [
+      { title: "Crabgrass Pre-Emergent", details: "Apply pre-emergent herbicide (without fertilizer). Timing is critical — soil temps hitting 55°F triggers crabgrass germination.", type: "weed", dep: "🚫 Do NOT apply if you reseeded bare spots in March. You can't do both." },
+      { title: "Begin Regular Mowing", details: "Mow 1–2x/week at 3–4\" height. Never remove more than 1/3 of blade length. Taller grass shades out crabgrass.", type: "mow" },
+      { title: "Mow Dandelions When Flowering", details: "Cut them down before they go to seed (white puffball stage). Hand-pull if possible.", type: "weed" },
+    ],
+  },
+  {
+    id: "late-spring", label: "Late Spring", dates: "April 15 – May 31",
+    color: "#3d7a22", accent: "#d8e5ce", icon: "☀️", months: [3, 4], dayRange: [15, 31],
+    tasks: [
+      { title: "Continue Mowing at 3–4\"", details: "Consistent mowing encourages root growth and suppresses weeds. Keep blades sharp.", type: "mow" },
+      { title: "Monitor & Spot-Treat Weeds", details: "Second/third Triad Select application for wild onion/garlic if needed. Spot-spray broadleaf weeds as they appear.", type: "weed", dep: "🌡️ Stop herbicide applications when temps regularly exceed 85°F to avoid stressing fescue." },
+    ],
+  },
+  {
+    id: "summer", label: "Summer", dates: "June 1 – August 14",
+    color: "#c4871a", accent: "#faf0dc", icon: "🌡️", months: [5, 6, 7], dayRange: [1, 14],
+    tasks: [
+      { title: "Raise Mowing Height", details: "Mow ½–1\" taller than normal (3.5–4.5\"). Taller grass retains moisture and protects roots.", type: "mow" },
+      { title: "Accept Dormancy", details: "Tall fescue will go semi-dormant in hot/dry weather — this is normal. It will green back up in fall. Don't panic-water or over-fertilize.", type: "info" },
+      { title: "Water Wisely (if irrigating)", details: "Deep, infrequent watering (1\" per week) is better than daily light watering. Early morning is best.", type: "info" },
+      { title: "No Fertilizer, No Herbicide", details: "Heat-stressed fescue can be damaged by both. Wait for fall.", type: "fertilizer", dep: "🛑 Applying fertilizer or broadleaf herbicide in summer heat can seriously damage fescue." },
+    ],
+  },
+  {
+    id: "late-summer", label: "Late Summer", dates: "August 15 – September 15",
+    color: "#2d6b1a", accent: "#d0e2c6", icon: "⭐", months: [7, 8], dayRange: [15, 15],
+    highlight: true,
+    tasks: [
+      { title: "★ PRIME WINDOW — Core Aerate & Overseed", details: "Core aerate with Corona YardBREATHER, then overseed with Super Turf II LS. Keep seed consistently moist for 2–3 weeks. This is the single most important thing you do all year.", type: "seed" },
+      { title: "Soil Test (every 3–4 years)", details: "Send sample to University of Delaware lab. If pH ≤ 6.0, apply lime. Results guide your fertilizer program.", type: "fertilizer", dep: "🔄 Re-test every 2–3 years to update fertilizer rates and check if lime is needed." },
+      { title: "Fall Fertilizer — Application 1", details: "Apply 10 lbs 10-6-4 per 1,000 sq ft (clippings removed) OR 3 lbs Ammonium Nitrate 34-0-0 per 1,000 sq ft (clippings left on).", type: "fertilizer" },
+      { title: "Consider Tree Canopy Work", details: "If shade is limiting grass growth, have an arborist crown-raise lower limbs (8–10') and selectively thin the canopy.", type: "info" },
+    ],
+  },
+  {
+    id: "early-fall", label: "Early Fall", dates: "September 15 – October 15",
+    color: "#8b6914", accent: "#f5ecd4", icon: "🍂", months: [8, 9], dayRange: [15, 15],
+    tasks: [
+      { title: "Last Chance to Overseed", details: "October 15 is the hard cutoff for fall seeding. Seed needs time to establish before first frost.", type: "seed", dep: "⏰ HARD DEADLINE: October 15 — no seeding after this date." },
+      { title: "Continue Mowing at 3–4\"", details: "Resume normal mowing height as temps cool. Fescue is actively growing again.", type: "mow" },
+    ],
+  },
+  {
+    id: "late-fall", label: "Late Fall", dates: "October 1 – November 15",
+    color: "#7a5a10", accent: "#f0e4c8", icon: "🍁", months: [9, 10], dayRange: [1, 15],
+    tasks: [
+      { title: "Fall Fertilizer — Application 2", details: "Apply 10 lbs 10-6-4 per 1,000 sq ft (clippings removed) OR 3 lbs Ammonium Nitrate 33-0-0 per 1,000 sq ft (clippings left on). This is the most important fertilizer app of the year.", type: "fertilizer" },
+      { title: "Lower Mowing Height for Winter", details: "Gradually reduce mowing height on the last few cuts. Shorter grass reduces snow mold risk and matting.", type: "mow" },
+      { title: "Clean Up Leaves", details: "Don't let heavy leaf cover smother the lawn. Mulch-mow thin layers; rake or blow thick ones.", type: "info" },
+    ],
+  },
+  {
+    id: "winter", label: "Winter", dates: "November 15 – February 28",
+    color: "#6b7b8d", accent: "#e8ecf0", icon: "❄️", months: [10, 11, 0, 1], dayRange: [15, 28],
+    tasks: [
+      { title: "Stay Off Frozen/Wet Turf", details: "Walking on frozen or saturated grass damages crowns. Minimize foot traffic.", type: "info" },
+      { title: "Plan & Order Supplies", details: "Order seed (Super Turf II LS), pre-emergent, Triad Select, and surfactant so you're ready for spring.", type: "info" },
+      { title: "Tree Work Window", details: "Late winter (Feb) is ideal for crown-raising and canopy thinning before leaf-out. Schedule an arborist.", type: "info" },
+    ],
+  },
+];
+
+const TYPE_STYLES = {
+  seed:       { bg: "#e3f0d6", border: "#7ab648", label: "Seeding",         icon: "🌾" },
+  weed:       { bg: "#fce8e8", border: "#d45454", label: "Weed Control",    icon: "🎯" },
+  fertilizer: { bg: "#fff3d6", border: "#d4a017", label: "Fertilizer/Soil", icon: "🧪" },
+  mow:        { bg: "#e0f0e8", border: "#3d8b5e", label: "Mowing",         icon: "✂️" },
+  info:       { bg: "#e8eef5", border: "#6b8bb5", label: "General",        icon: "📋" },
+};
+
+let currentFilter = "all";
+let openSeason = null;
+
+// Figure out which season we're in
+function getCurrentSeasonId() {
+  const now = new Date();
+  const m = now.getMonth(); // 0-indexed
+  const d = now.getDate();
+  if ((m === 2 && d < 15)) return "early-spring";
+  if ((m === 2 && d >= 15) || (m === 3 && d <= 15)) return "mid-spring";
+  if ((m === 3 && d > 15) || m === 4) return "late-spring";
+  if (m === 5 || m === 6 || (m === 7 && d < 15)) return "summer";
+  if ((m === 7 && d >= 15) || (m === 8 && d <= 15)) return "late-summer";
+  if ((m === 8 && d > 15) || (m === 9 && d <= 15)) return "early-fall";
+  if ((m === 9) || (m === 10 && d <= 15)) return "late-fall";
+  return "winter";
+}
+
+function render() {
+  const currentId = getCurrentSeasonId();
+  if (openSeason === null) openSeason = currentId;
+
+  // Now banner
+  const currentSeason = SEASONS.find(s => s.id === currentId);
+  document.getElementById("nowBanner").innerHTML =
+    `📍 You're currently in <strong>${currentSeason.icon} ${currentSeason.label}</strong> (${currentSeason.dates})`;
+
+  // Filters
+  const filtersEl = document.getElementById("filters");
+  const allFilters = [
+    { key: "all", label: "All Tasks", icon: "📅" },
+    ...Object.entries(TYPE_STYLES).map(([k, v]) => ({ key: k, label: v.label, icon: v.icon })),
+  ];
+  filtersEl.innerHTML = allFilters.map(f =>
+    `<button class="filter-btn ${currentFilter === f.key ? 'active' : ''}" data-filter="${f.key}">${f.icon} ${f.label}</button>`
+  ).join("");
+
+  // Seasons
+  const seasonsEl = document.getElementById("seasons");
+  seasonsEl.innerHTML = SEASONS.map(season => {
+    const isOpen = openSeason === season.id;
+    const isCurrent = currentId === season.id;
+    const tasks = currentFilter === "all" ? season.tasks : season.tasks.filter(t => t.type === currentFilter);
+
+    return `
+      <div class="season ${isOpen ? 'open' : ''} ${season.highlight ? 'highlight' : ''}"
+           style="--season-color:${season.color};--season-accent:${season.accent}"
+           ${isCurrent ? 'id="current-season"' : ''}>
+        <button class="season-header" data-season="${season.id}">
+          <div class="season-left">
+            <span class="season-icon">${season.icon}</span>
+            <div>
+              <div class="season-name">
+                ${season.label}
+                ${season.highlight ? `<span class="key-badge">KEY WINDOW</span>` : ''}
+                ${isCurrent ? `<span class="key-badge" style="background:#333">NOW</span>` : ''}
+              </div>
+              <div class="season-dates">${season.dates}</div>
+            </div>
+          </div>
+          <div class="season-right">
+            ${!isOpen && tasks.length ? `<span class="task-count">${tasks.length} task${tasks.length !== 1 ? 's' : ''}</span>` : ''}
+            <span class="chevron">▼</span>
+          </div>
+        </button>
+        <div class="tasks">
+          ${tasks.length === 0 ? `<p class="no-tasks">No ${currentFilter !== 'all' ? TYPE_STYLES[currentFilter]?.label.toLowerCase() : ''} tasks this period.</p>` :
+            tasks.map(task => {
+              const s = TYPE_STYLES[task.type];
+              return `
+                <div class="task" style="--task-bg:${s.bg};--task-border:${s.border}">
+                  <div class="task-title">${s.icon} ${task.title}</div>
+                  <div class="task-details">${task.details}</div>
+                  ${task.dep ? `<div class="task-dep">${task.dep}</div>` : ''}
+                </div>`;
+            }).join('')
+          }
+        </div>
+      </div>`;
+  }).join("");
+}
+
+// Event delegation
+document.addEventListener("click", function(e) {
+  const filterBtn = e.target.closest(".filter-btn");
+  if (filterBtn) {
+    currentFilter = filterBtn.dataset.filter;
+    render();
+    return;
+  }
+
+  const seasonBtn = e.target.closest(".season-header");
+  if (seasonBtn) {
+    const id = seasonBtn.dataset.season;
+    openSeason = openSeason === id ? null : id;
+    render();
+    return;
+  }
+});
+
+render();
+</script>
+</body>
+</html>
